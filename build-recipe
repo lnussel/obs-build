@@ -263,6 +263,27 @@ recipe_needs_build_binaries() {
     return 1
 }
 
+recipe_set_build_in_place() {
+    test "$BUILDTYPE" = spec || return 0
+    if test -n "$RPM_BUILD_IN_PLACE" || grep -E '^#[[:blank:]]*build-in-place[[:blank:]]*$' >/dev/null <"$1"; then
+	RECIPE_RPM_BUILD_IN_PLACE=1
+    else
+	unset RECIPE_RPM_BUILD_IN_PLACE
+    fi
+}
+
+compute_recipe_args() {
+    local recipe="$1"
+    initbuildsys_recipeargs=()
+    if recipe_needs_build_binaries "$recipe" ; then
+	initbuildsys_recipeargs+=('--create-build-binaries')
+    fi
+    if test -n "$RECIPE_RPM_BUILD_IN_PLACE"; then
+	initbuildsys_recipeargs+=('--define')
+	initbuildsys_recipeargs+=('_build_in_place 1')
+    fi
+}
+
 recipe_build_time_statistics() {
     if test "$DO_STATISTICS" = 1 -a -n "$RECIPE_BUILD_START_TIME" -a -n "$TOPDIR" -a -n "$RUNNING_IN_VM" ; then
 	mkdir -p "$TOPDIR/OTHER"
@@ -290,3 +311,4 @@ recipe_gendiff() {
     fi
 }
 
+# vim: syntax=sh
